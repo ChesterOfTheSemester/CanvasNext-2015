@@ -36,7 +36,7 @@ player.image = 'example.com/sprite2.png';
 
 This library does layer-based rendering. You can change an object's *layer* value asynchronously. You can access layers and settings in the *layer* scope. 
 
-You can enable WebGL for layers individually for the purpose of speed. It will draw objects as cubes.
+You can enable WebGL for layers individually for the purpose of speed. Think of them as particle-containers or simply layers with many movable objects. It will draw objects as cubes.
 
 ```javascript
 game.layers[0].use_webgl = true;
