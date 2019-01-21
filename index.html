@@ -1,0 +1,169 @@
+<html>
+<head>
+    <script src="CanvasNext.js"></script>
+    <script src="//d3js.org/d3.v3.min.js"></script>
+
+    <style>
+        @font-face {
+            font-family: dlxfont;
+            src: url(assets/dlxfont.ttf);
+        }
+    </style>
+
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    var game = new CanvasNext({
+        canvas : document.getElementById('canvas'),
+        context : '2d',
+
+        width: 900,
+        height: 700,
+
+        fps_cap : 300
+    });
+
+    game.add_layer({
+        use_webgl:false
+    });
+
+    var x = d3.scale.linear().domain([-5, 5]).range([0, game.width]),
+            y = d3.scale.linear().domain([-5, 5]).range([0, game.height]);
+
+    var images = [
+        'icons/p1.png',
+        'icons/p2.png',
+        'icons/p3.png',
+        'icons/p4.png',
+        'icons/p5.png',
+        'icons/p6.png',
+        'icons/p7.png',
+        'icons/p8.png',
+        'icons/p9.png',
+        'icons/p10.png'
+    ];
+
+    var add_particle = function()
+    {
+        game.add_obj({
+            layer : 1,
+            x : 0,
+            y : 0,
+            width : 32,
+            height : 32,
+
+            image : images[Math.round(Math.random() * images.length-1)],
+            rotate : 0,
+            rotate_dir : -6 + Math.random() * 12,
+
+            xloc : 0,
+            yloc : 0,
+            xvel : 0,
+            yvel : 0
+        });
+    };
+
+    var mainloop = function()
+    {
+        for ( var i = 0 ; i < game.layers[0].obj.length ; i++ )
+        {
+            var particle = game.layers[0].obj[i];
+
+            particle.xloc += particle.xvel;
+            particle.yloc += particle.yvel;
+
+            particle.x = x(particle.xloc);
+            particle.y = y(particle.yloc);
+
+            particle.xvel += 0.04 * (Math.random() - .5) - 0.05 * particle.xvel - 0.0005 * particle.xloc;
+            particle.yvel += 0.04 * (Math.random() - .5) - 0.05 * particle.yvel - 0.0005 * particle.yloc;
+
+            if ( particle.rotate < -360 || particle.rotate > 360 )
+                particle.rotate = 0;
+            else
+                particle.rotate += particle.rotate_dir;
+
+        }
+
+        // FPS rate
+        fps.text[0] = 'FPS: ' + game.fps;
+        fps.modified = new Date() / 1000;
+
+        // Particles onscreen
+        particles_onscreen.text[0] = 'Enities: ' + game.layers[0].obj.length;
+        particles_onscreen.modified = new Date() / 1000;
+
+        // Particles onscreen
+        verts.text[0] = 'Verts: ' + (game.layers[0].use_webgl === true ? game.layers[0].webgl.verts.length : 0);
+        verts.modified = new Date() / 1000;
+
+        requestAnimationFrame(mainloop);
+    };
+
+    // GUI
+    {
+        var label = game.add_obj({
+            layer : 2,
+            x : 0,
+            y : 0,
+            width : 300,
+            height : 100,
+            bg_color : 'black',
+            opacity : 0.6
+        });
+
+        var fps = game.add_obj({
+            layer : 2,
+            x : 10,
+            y : 26,
+
+            text : [ 'FPS: ', '17px Lucida Console', 'white' ]
+        });
+
+        var particles_onscreen = game.add_obj({
+            layer : 2,
+            x : 10,
+            y : 26 * 2,
+
+            text : [ 'Particles onscreen: ', '17px Lucida Console', 'white' ]
+        });
+
+        var verts = game.add_obj({
+            layer : 2,
+            x : 10,
+            y : 26 * 3,
+
+            text : [ 'Verts: ', '17px Lucida Console', 'white' ]
+        });
+    }
+
+    var update_count = function(n)
+    {
+        var c = game.layers[0].obj.length;
+
+        if ( c > n )
+            for ( var i = c ; i > n ; i-- )
+                game.remove_obj(game.layers[0].obj[i-1]);
+
+        else if ( n > c )
+            for ( var i = c ; i < n ; i++ )
+                add_particle();
+    };
+
+    mainloop();
+
+    update_count(1);
+
+</script>
+
+<div>
+    <label>Entities: </label><input type="text" value="1000" onchange="update_count(this.value);"/>
+    <label>Render API: </label><select onchange="game.layers[0].use_webgl = this.value != '2D'"><option>2D</option><option>WebGL</option></select>
+</div>
+
+</body>
+</html>
