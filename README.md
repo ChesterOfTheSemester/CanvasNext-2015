@@ -27,7 +27,7 @@ var player = game.add_obj({
 });
 ```
 
-The library is asynchronous. If you change the object values they will react automatically:
+The library is asynchronous. If you change an object's value it will take effect immediately:
 
 ```javascript
 player.x += 10;
