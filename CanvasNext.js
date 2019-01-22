@@ -1,6 +1,5 @@
 /**
  *   Top-level CanvasNext API
- *   http://canvasnext.com
  *
  *   Copyright (c) 2016 Chester Abrahams
  *
@@ -16,7 +15,7 @@
  *   The above copyright notice and this permission notice shall be
  *   included in all copies or substantial portions of the Software.
  *
- *   THE SOFTWARE IS PROVIfor webglLUDING BUT NOT LIMITED TO THE WARRANTIES
+ *   THE SOFTWARE IS PROVIDIN LUDING BUT NOT LIMITED TO THE WARRANTIES
  *   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
  *   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
  *   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
@@ -37,13 +36,13 @@ var CanvasNext = function(opt)
 
 CanvasNext.prototype.initialize = function(opt)
 {
-    for ( i in opt ) this[i] = opt[i];
+    for ( var i in opt ) this[i] = opt[i];
 
     var CN = this;
 
     this.STORE = opt;
     {
-        this.STORE.ctx = this.STORE.canvas.getContext(this.STORE.context);
+        this.STORE.ctx = this.STORE.canvas.getContext(this.STORE.context || '2d');
 
         // Layer list
         this.STORE.layer = this.layers = [];
@@ -63,6 +62,7 @@ CanvasNext.prototype.initialize = function(opt)
             this.STORE.image_cache.canvas.width = this.STORE.image_cache.canvas.height = 10;
             this.STORE.image_cache.ctx = this.STORE.image_cache.canvas.getContext('2d');
             this.STORE.image_cache.tmpCanvas = document.createElement('img');
+            this.STORE.image_cache.tmpCanvas.width = this.STORE.image_cache.tmpCanvas.height = 10;
         }
 
         /**
@@ -77,13 +77,35 @@ CanvasNext.prototype.initialize = function(opt)
             };
 
             this.camera = new Proxy(this.STORE.camera,
-            {
-                set : function(obj, key, value)
                 {
-                    if ( obj[key] === value ) return;
-                    obj[key] = value;
-                }
-            });
+                    set : function(obj, key, value)
+                    {
+                        if ( obj[key] === value ) return;
+                        CN.glRefresh();
+
+                        if ( key == 'x' || key === 'y' ) value = parseFloat(value.toFixed(0));;
+
+                        obj[key] = value;
+                    }
+                });
+        }
+
+        /**
+         *  Track the mouse position
+         *  [ X, Y ] || @obj mouse.{ x, y }
+         */
+        {
+            CN.mouse_position = [0, 0];
+            CN.mouse = {};
+            this.STORE.canvas.onmousemove = function(e)
+            {
+                CN.mouse_position = [ e.pageX - CN.STORE.canvas.offsetLeft, e.pageY - CN.STORE.canvas.offsetTop ];
+
+                CN.mouse.x = CN.mouse_position[0];
+                CN.mouse.y = CN.mouse_position[1];
+
+                CN.glRefresh();
+            };
         }
     }
 
@@ -136,8 +158,8 @@ CanvasNext.prototype.initialize = function(opt)
                     {
                         if ( ! (value in CN.STORE.image_cache) )
                         {
-                            var image = document.createElement('img');
-                                image.src = value;
+                            const image = document.createElement('img');
+                            image.src = value;
 
                             CN.STORE.image_cache[value] = image;
                             obj.image_src = CN.STORE.image_cache[value].src;
@@ -154,7 +176,7 @@ CanvasNext.prototype.initialize = function(opt)
                         else
                             var loadedInterval = setInterval(function()
                             {
-                                if ( ! CN.STORE.image_cache[value].complete ) return;
+                                if ( CN.STORE.image_cache[value].complete !== true ) return;
 
                                 obj.image = CN.STORE.image_cache[value];
                                 obj.image_src = CN.STORE.image_cache[value].src;
@@ -170,10 +192,12 @@ CanvasNext.prototype.initialize = function(opt)
                                     if ( image.width > canvas.width ) canvas.width = image.width;
                                     canvas.height += 10 + image.height;
 
-                                    ctx.drawImage(tmpCanvas, 0, 0);
+                                    if ( tmpCanvas.src != '' ) ctx.drawImage(tmpCanvas, 0, 0);
                                     ctx.drawImage(image, 0, canvas.height - image.height);
 
                                     CN.STORE.image_cache.tmpCanvas.src = canvas.toDataURL();
+
+                                    if ( tmpCanvas.src == '' ) return;
 
                                     CN.STORE.image_cache.atlas[value] = CN.STORE.image_cache.atlas[image.src] = {
                                         x : 0,
@@ -183,7 +207,7 @@ CanvasNext.prototype.initialize = function(opt)
                                     };
 
                                     // Update GL textures
-                                    for ( i = 0 ; i < CN.STORE.layer.length ; i++ )
+                                    for ( var i = 0 ; i < CN.STORE.layer.length ; i++ )
                                         CN.glUpdateTexture(CN.STORE.layer[i].webgl.gl);
 
                                     CN.glRefresh();
@@ -208,7 +232,7 @@ CanvasNext.prototype.initialize = function(opt)
 
                                 return clearInterval(loadedInterval);
                             }, 50);
-                break;
+                    break;
 
                 // Audio
                 case 'audio' :
@@ -217,7 +241,7 @@ CanvasNext.prototype.initialize = function(opt)
                         if ( ! (value in CN.STORE.audio_cache) )
                         {
                             var audio = document.createElement('audio');
-                                audio.src = value;
+                            audio.src = value;
 
                             CN.STORE.audio_cache[value] = audio;
                         }
@@ -261,17 +285,14 @@ CanvasNext.prototype.initialize = function(opt)
 
                     obj.layer = value;
                     CN.add_obj(obj);
-                break;
+                    break;
 
                 // Delete
                 // Delete object if attribute 'delete' is set
                 case 'delete' :
                     CN.remove_obj(obj);
-                break;
+                    break;
             }
-
-            //console.log(obj.layer-1);
-            //CN.STORE.layer[obj.layer-1].modified = true;
 
             // Call set function
             // @param: Obj, Key, oldValue, newValue
@@ -301,7 +322,7 @@ CanvasNext.prototype.initialize = function(opt)
                 case 'fps_cap' :
                     obj.STORE.fps_cap = value;
                     if ( value > 0 ) CN.callback();
-                break;
+                    break;
             }
 
             obj[key] = value;
@@ -320,19 +341,19 @@ CanvasNext.prototype.callback = function()
     /**
      * Enumerate the frames count & declare second's frame rate
      */
-     {
-         // Enumerate the frame count with every callback
-         this.STORE.fps_cap !== 0 && this.STORE.frameCount.frameEnum++;
+    {
+        // Enumerate the frame count with every callback
+        this.STORE.fps_cap !== 0 && this.STORE.frameCount.frameEnum++;
 
-         // Declare the second's frame rate & clear the enumeration by the threshold
-         if ( this.STORE.frameCount.frameTime + 1000 < new Date().getTime() )
-             this.STORE.frameCount.count = this.STORE.frameCount.frameEnum,
-             this.STORE.frameCount.frameEnum = 0,
-             this.STORE.frameCount.frameTime = new Date().getTime();
+        // Declare the second's frame rate & clear the enumeration by the threshold
+        if ( this.STORE.frameCount.frameTime + 1000 < new Date().getTime() )
+            this.STORE.frameCount.count = this.STORE.frameCount.frameEnum,
+                this.STORE.frameCount.frameEnum = 0,
+                this.STORE.frameCount.frameTime = new Date().getTime();
 
-         this.fps = this.STORE.frameCount.count;
-         this.STORE.fps_cap = this.fps_cap || this.STORE.fps_cap;
-     }
+        this.fps = this.STORE.frameCount.count;
+        this.STORE.fps_cap = this.fps_cap || this.STORE.fps_cap;
+    }
 
     this.comparator();
     this.render();
@@ -344,14 +365,14 @@ CanvasNext.prototype.callback = function()
         this.STORE.callback_timer = requestAnimationFrame(this.callback.bind(this));
     else
         clearTimeout(this.STORE.callback_timer),
-        this.STORE.callback_timer = setTimeout(this.callback.bind(this));
+            this.STORE.callback_timer = setTimeout(this.callback.bind(this));
 };
 
 CanvasNext.prototype.comparator = function()
 {
     for ( var i = 0 ; i < this.STORE.layer.length ; i++  )
         if ( this.STORE.layer[i].use_webgl === false )
-            for ( var j = 0 ; j < this.STORE.layer[i].obj_count ; j++ )
+            for ( var j = 0 ; j < this.STORE.layer[i].obj.length ; j++ )
                 for ( var k in this.STORE.layer[i].obj[j] )
                     if ( this.STORE.layer[i].obj_compare[j][k] !== this.STORE.layer[i].obj[j][k] )
                     {
@@ -369,47 +390,66 @@ CanvasNext.prototype.render = function()
     var CN = this;
 
     // Attempt to redraw every layer
-    for ( layer = 0 ; layer < this.STORE.layer.length ; layer++ )
+    for ( var layer = 0 ; layer < this.STORE.layer.length ; layer++ )
     {
-        target_layer = this.STORE.layer[layer],
-        target_canvas = target_layer.use_webgl !== false ? target_layer.canvas : target_layer.webgl.canvas;
+        var target_layer = this.STORE.layer[layer],
+            target_canvas = target_layer.use_webgl !== true ? target_layer.canvas : target_layer.webgl.canvas;
 
         // Only redraw this layer if it's declared modified
         if ( target_layer.modified !== true && target_layer.use_webgl === false ) continue;
 
-        target_obj = null;
+        // For WebGL, compile custom shaders
+        if ( target_layer.use_webgl === true )
+        {
+            var vert_shader_change = false;
+            for ( var i = 0 ; i < target_layer.vertexShader.length ; i++ )
+                if ( target_layer.webgl.compileVertexShader[i] != target_layer.vertexShader[i] )
+                {
+                    target_layer.webgl.compileVertexShader[i] = target_layer.vertexShader[i];
+                    vert_shader_change = true;
+                }
 
-        if ( target_layer.use_webgl !== true && target_layer.obj.length > 0 )
-            target_layer.ctx.clearRect(0, 0, target_canvas.width, target_canvas.height);
+            var frag_shader_change = false;
+            for ( var i = 0 ; i < target_layer.fragmentShader.length ; i++ )
+                if ( target_layer.webgl.compileFragmentShader[i] != target_layer.fragmentShader[i] )
+                {
+                    target_layer.webgl.compileFragmentShader[i] = target_layer.fragmentShader[i];
+                    frag_shader_change = true;
+                }
+
+            if ( vert_shader_change || frag_shader_change )
+                this.glRecompileShaders(
+                    target_layer,
+                    vert_shader_change && target_layer.vertexShader || undefined,
+                    frag_shader_change && target_layer.fragmentShader || undefined
+                )
+        }
 
         // Attempt to rescale layer's canvas size to the furthest object
-        /*{
-            // In case of 2D context, clear the layer canvas
-            if ( target_layer.use_webgl !== true && target_layer.obj.length > 0 )
-                target_layer.ctx.clearRect(0, 0, target_canvas.width, target_canvas.height);
+        if ( target_layer.use_webgl !== true )
+        {
+            if ( target_layer.clear !== false ) target_layer.ctx.clearRect(0, 0, target_canvas.width, target_canvas.height);
 
             // Rescale layers based on object's positions. Primarily used for image buffering
-            for ( obj = 0, objlen = target_layer.obj.length ; obj < objlen ; ++obj )
+            for ( var obj = 0 ; obj < target_layer.obj.length ; obj++ )
             {
-                target_obj = target_layer.obj[obj];
+                var target_obj = target_layer.obj[obj];
 
                 if ( target_obj.x + target_obj.width > target_canvas.width )
                     target_canvas.width = Math.max(this.STORE.canvas.width, target_obj.x + target_obj.width);
 
                 if (target_obj.y + target_obj.height > target_canvas.height )
-                    target_canvas.height = Math.max(this.STORE.canvas.width, target_obj.y + target_obj.height);
+                    target_canvas.height = Math.max(this.STORE.canvas.height, target_obj.y + target_obj.height);
             }
-
-            //this.glRefresh();
-        }*/
+        }
 
         // Draw objects on the layer
-        for ( obj = 0, objlen = target_layer.obj.length ; obj < objlen ; obj++ )
+        for ( var obj = 0, objlen = target_layer.obj.length ; obj < objlen ; obj++ )
         {
             if ( target_layer.obj[obj]['visible'] === false ) continue;
 
             // Optimization: don't draw the object if it's outside the canvas viewport
-            if ( target_layer.position != 'absolute' && target_layer.obj[obj].buffer !== true && ! (
+            if ( target_layer.position != 'absolute' /*&& target_layer.buffer !== true*/ && target_layer.obj[obj].buffer !== true && ! (
                     ( target_layer.obj[obj].x + target_layer.obj[obj].width >= this.STORE.camera.x
                     && target_layer.obj[obj].x <= this.STORE.camera.x + this.STORE.canvas.width )
                     && ( target_layer.obj[obj].y + target_layer.obj[obj].height >= this.STORE.camera.y
@@ -421,7 +461,7 @@ CanvasNext.prototype.render = function()
             if ( target_layer.use_webgl !== true )
                 this.draw(target_layer.ctx, target_layer.obj[obj]);
             else
-                CN.glUpdateBuffer(target_layer, target_layer.obj[obj], obj);
+                CN.glUpdateBuffer(target_layer, target_layer.obj[obj]);
         }
 
         target_layer.modified = false;
@@ -430,9 +470,9 @@ CanvasNext.prototype.render = function()
     // Draw the frame by drawing the layers together in order
     {
         this.STORE.ctx.clearRect(0, 0, this.STORE.canvas.width, this.STORE.canvas.height);
-        
-        for ( i = 0 ; i < this.STORE.layer.length ; i++ )
-            if ( this.STORE.layer[i].obj_count > 0 )
+
+        for ( var i = 0 ; i < this.STORE.layer.length ; i++ )
+            if ( this.STORE.layer[i].obj.length > 0 )
             {
                 // Optionally draw WebGL triangles
                 if ( this.STORE.layer[i].use_webgl === true )
@@ -443,11 +483,17 @@ CanvasNext.prototype.render = function()
 
                 this.draw(this.STORE.ctx, {
                     image : canvas,
-                    x : this.STORE.layer[i].position == 'relative' && -this.STORE.camera.x || 0,
-                    y : this.STORE.layer[i].position == 'relative' && -this.STORE.camera.y || 0,
-                    rotate : this.STORE.camera.rotate,
+                    x : 0,
+                    y : 0,
+                    crop : [
+                        this.STORE.layer[i].position != 'absolute' && this.STORE.layer[i].use_webgl !== true && this.STORE.camera.x || 0,
+                        this.STORE.layer[i].position != 'absolute' && this.STORE.layer[i].use_webgl !== true && this.STORE.camera.y || 0,
+                        this.STORE.layer[i].canvas.width,
+                        this.STORE.layer[i].canvas.height
+                    ],
                     width : this.STORE.layer[i].canvas.width * this.STORE.camera.z,
-                    height : this.STORE.layer[i].canvas.height * this.STORE.camera.z
+                    height : this.STORE.layer[i].canvas.height * this.STORE.camera.z,
+                    rotate : this.STORE.camera.rotate,
                 })
             }
     }
@@ -530,12 +576,51 @@ CanvasNext.prototype.draw = function (ctx, obj, opt)
         ctx.stroke();
     }
 
+    // Draw line
+    if ( typeof obj['line'] != 'undefined' )
+    {
+        ctx.beginPath();
+
+        // Declare variables
+        // If index 0 == array, iterate line path
+        if ( typeof obj['line'][0] == 'object' )
+        {
+            var lineWidth = obj['line'][1] || 1,
+                R = obj['line'][2],
+                G = obj['line'][3],
+                B = obj['line'][4],
+                A = obj['line'][5];
+
+            ctx.moveTo(obj['line'][0][0], obj['line'][0][1]);
+
+            for ( var i = 2 ; i < obj['line'][0].length ; i += 2 )
+                ctx.lineTo(obj['line'][0][i], obj['line'][0][i+1]);
+        }
+
+        else
+        {
+            var lineWidth = obj['line'][4] || 1,
+                R = obj['line'][5],
+                G = obj['line'][6],
+                B = obj['line'][7],
+                A = obj['line'][8];
+
+            ctx.moveTo(obj['line'][0], obj['line'][1]);
+            ctx.lineTo(obj['line'][2], obj['line'][3]);
+        }
+
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = 'rgba(' + R + ', ' + G + ', ' + B + ', ' + A + ')';
+
+        ctx.stroke();
+    }
+
     // Draw an image
     if ( typeof obj['image'] != 'undefined'
         && (
-            obj['image'] instanceof HTMLImageElement && obj.image.complete
-            || obj['image'] instanceof HTMLCanvasElement)
-        )
+        obj['image'] instanceof HTMLImageElement && obj.image.complete
+        || obj['image'] instanceof HTMLCanvasElement)
+    )
     {
         if ( typeof obj['crop'] != 'undefined' )
         {
@@ -579,26 +664,26 @@ CanvasNext.prototype.draw = function (ctx, obj, opt)
     // Run a function for e.g low-level rendering
     if ( typeof obj['run'] == 'function' )
     {
-        ctx.translate(obj['x'], obj['y'])
+        ctx.translate(obj['x'], obj['y']);
 
         obj['run'](ctx);
     }
 
     ctx.restore();
-}
+};
 
 CanvasNext.prototype.add_obj = function(obj)
 {
     var layers = this.STORE.layer;
 
-    obj.layer = obj.layer || 1;
+    obj.layer = parseInt(obj.layer) || 1;
 
     // Create object Proxy
     //obj = new Proxy(obj, this.STORE.objHandler);
 
     // Iteratively create layers if they don't exist
     if ( typeof layers[obj.layer-1] == 'undefined' )
-        for ( i = layers.length ; i < obj.layer ; i++ )
+        for ( var i = layers.length ; i < obj.layer ; i++ )
             this.add_layer();
 
     // Set default values for common properties
@@ -610,19 +695,17 @@ CanvasNext.prototype.add_obj = function(obj)
         obj.height = obj.height || 0;
 
         // Initialize object by calling Proxy handler for every property
-        for ( i in obj )
+        for ( var i in obj )
             this.STORE.objHandler.set(obj, i, obj[i], true);
     }
 
     // Add object to specified layer
     layers[obj.layer-1].obj.push(obj);
-    layers[obj.layer-1].obj_count += 1;
     layers[obj.layer-1].obj_compare.push({});
 
     /**
      * For WebGL, allocate object to buffer arrays
      */
-    //if ( layers[obj.layer-1].use_webgl === true )
     {
         var layer = layers[obj.layer-1];
 
@@ -649,24 +732,21 @@ CanvasNext.prototype.remove_obj = function(obj)
     var layer = this.STORE.layer[obj.layer-1];
 
     // Remove this object from the associated layer
-    for ( i in layer.obj )
-        if ( layer.obj[i].delete === true || layer.obj[i] == obj )
+    for ( var i in layer.obj )
+        if ( layer.obj[i] == obj || layer.obj[i].delete === true )
         {
-            delete layer.obj[i].delete;
-
             layer.obj.splice(i, 1);
-            layer.obj_count -= 1;
             layer.obj_compare.splice(i, 1);
 
             break;
         }
 
-    /**
-     * For WebGL, remove object from the buffer array
-     */
+    // For WebGL, remove object from the buffer array
     {
-        for ( var j = 0 ; j < layer.webgl.bufferList.length ; j++ )
-            layer.webgl[layer.webgl.bufferList[j]].set(layer.webgl.fModel, obj.index)
+        layer.webgl.verts[obj.index] = -1;
+
+        //for ( var j = 0 ; j < layer.webgl.bufferList.length ; j++ )
+        //    layer.webgl[layer.webgl.bufferList[j]].set(layer.webgl.fModelVoid, obj.index)
     }
 
     layer.modified = true;
@@ -679,10 +759,10 @@ CanvasNext.prototype.add_layer = function(obj)
     // Set default values for common properties
     {
         obj.modified = true;
-        obj.position = 'relative';
+        obj.position = obj.position || 'relative';
         obj.obj = obj.obj || [];
         obj.obj_compare = [];
-        obj.obj_count = 0;
+        obj.buffer = obj.buffer || false;
 
         obj.canvas = document.createElement('canvas');
         obj.ctx = obj.canvas.getContext('2d');
@@ -690,7 +770,10 @@ CanvasNext.prototype.add_layer = function(obj)
         obj.canvas.width = this.STORE.canvas.width;
         obj.canvas.height = this.STORE.canvas.height;
 
+        // todo: fix
+        //obj.use_webgl = false;
         obj.use_webgl = obj.use_webgl || false;
+        obj.use_webgl = false; // Todo: DELETE
     }
 
     /**
@@ -708,8 +791,11 @@ CanvasNext.prototype.add_layer = function(obj)
 
         // Setup GLSL programs
         {
-            var vertexShaderScript = webgl.vertexShaderScript = 'attribute vec4 a_position;\nattribute vec4 a_texcoord;\nattribute vec4 a_property;\nattribute vec4 a_textureCrop;\n\nuniform vec2 u_resolution;\n\nvarying vec4 v_texcoord;\nvarying vec4 textureCrop;\n\nvoid main(void)\n{\n \/\/ Discard if this vertex is -1\n if ( a_property.x == -1.0 )\n gl_Position = vec4(2.0, 2.0, 2.0, 1.0);\n\n else\n {\n \/*** Handle geometry & rotation ***\/\n \/\/ Reposition for centered rotation\n vec2 position = vec2(\n a_position.x - a_position.z \/ 2.0,\n a_position.y - a_position.w \/ 2.0);\n\n vec2 rotatedPosition = a_property.x == 0.0 && a_property.y == 1.0\n ? position\n : vec2(\n position.x * a_property.y + position.y * a_property.x,\n position.y * a_property.y - position.x * a_property.x);\n\n \/\/ Restore position\n rotatedPosition.x += a_position.z \/ 2.0;\n rotatedPosition.y += a_position.w \/ 2.0;\n\n gl_Position = vec4(((rotatedPosition + vec2(a_property.z, a_property.w)) \/ u_resolution * 2.0 - 1.0) * vec2(1, -1), 0, 1);\n\n \/*** Set texture & properties ***\/\n textureCrop = a_textureCrop;\n v_texcoord = a_texcoord;\n }\n}';
+            var vertexShaderScript = webgl.vertexShaderScript = 'attribute vec4 a_position;\nattribute vec4 a_texcoord;\nattribute vec4 a_property;\nattribute vec4 a_textureCrop;\n\nuniform vec4 u_camera;\n\nvarying vec4 v_texcoord;\nvarying vec4 textureCrop;\n\nvoid main(void)\n{\n \/\/ Discard if this vertex is -1\n if ( a_property.x == -1.0 )\n gl_Position = vec4(2.0, 2.0, 2.0, 1.0);\n\n else\n {\n \/*** Handle geometry & rotation ***\/\n \/\/ Reposition for centered rotation\n vec2 position = vec2(\n a_position.x - a_position.z \/ 2.0,\n a_position.y - a_position.w \/ 2.0);\n\n vec2 rotatedPosition = a_property.x == 0.0 && a_property.y == 1.0\n ? position\n : vec2(\n position.x * a_property.y + position.y * a_property.x,\n position.y * a_property.y - position.x * a_property.x);\n\n \/\/ Restore position\n rotatedPosition.x += a_position.z \/ 2.0;\n rotatedPosition.y += a_position.w \/ 2.0;\n\n gl_Position = vec4(((vec2(u_camera.x, u_camera.y) *-1.0 + rotatedPosition + vec2(a_property.z, a_property.w)) \/ vec2(u_camera.z, u_camera.w) * 2.0 - 1.0) * vec2(1, -1), 0, 1);\n\n\n \/*** Set texture & properties ***\/\n textureCrop = a_textureCrop;\n v_texcoord = a_texcoord;\n }\n}';
             var fragmentShaderScript = webgl.fragmentShaderScript = 'precision lowp float;\n\nvarying vec4 textureCrop;\nuniform vec2 u_textureDimension;\n\nvarying vec4 v_texcoord;\nuniform sampler2D texture;\n\nvoid main(void)\n{\n \/\/ Discard if this fragment is -1\n \/\/if ( v_texcoord.x == -1.0 ) discard;\n\n \/\/ Decide whether to draw texture or RGBA\n if ( v_texcoord.w < 0.0 )\n {\n gl_FragColor = texture2D(texture, vec2(\n v_texcoord.x * textureCrop.z \/ u_textureDimension.x + textureCrop.x \/ u_textureDimension.x,\n v_texcoord.y * textureCrop.w \/ u_textureDimension.y + textureCrop.y \/ u_textureDimension.y\n ));\n\n \/\/if ( gl_FragColor.w > 0.0 ) gl_FragColor.w = v_texcoord.z;\n }\n\n else\n gl_FragColor = v_texcoord;\n}';
+
+            vertexShaderScript = webgl.vertexShaderScript = document.getElementById('2d-vertex-shader') && document.getElementById('2d-vertex-shader').text || vertexShaderScript;
+            fragmentShaderScript = webgl.fragmentShaderScript = document.getElementById('2d-fragment-shader') && document.getElementById('2d-fragment-shader').text || fragmentShaderScript;
 
             var vertexShader = webgl.vertexShader = gl.createShader(gl.VERTEX_SHADER);
             gl.shaderSource(vertexShader, vertexShaderScript);
@@ -730,8 +816,8 @@ CanvasNext.prototype.add_layer = function(obj)
         {
             gl.disable(gl.DEPTH_TEST);
             gl.disable(gl.CULL_FACE);
-            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
             gl.enable(gl.BLEND);
+            gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         }
 
         // Create buffers & attributes
@@ -760,7 +846,12 @@ CanvasNext.prototype.add_layer = function(obj)
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferTextureCrop);
             gl.enableVertexAttribArray(textureCropLocation);
             gl.vertexAttribPointer(textureCropLocation, 4, gl.FLOAT, false, 0, 0);
-            
+
+            var bufferTextureCrop = webgl.bufferTextureCrop = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, bufferTextureCrop);
+            gl.enableVertexAttribArray(textureCropLocation);
+            gl.vertexAttribPointer(textureCropLocation, 4, gl.FLOAT, false, 0, 0);
+
             var maxEntities = 1;
 
             // Buffer data
@@ -789,62 +880,116 @@ CanvasNext.prototype.add_layer = function(obj)
 
         // Set attributes
         {
-            var resolutionLocation = webgl.resolutionLocation = gl.getUniformLocation(gl.program, 'u_resolution');
-            gl.uniform2f(resolutionLocation, this.STORE.canvas.width, this.STORE.canvas.height);
+            var cameraLocation = webgl.cameraLocation = gl.getUniformLocation(gl.program, 'u_camera');
+            gl.uniform4f(cameraLocation, this.STORE.camera.x, this.STORE.camera.y, this.STORE.canvas.width, this.STORE.canvas.height);
 
             var textureDimensionLocation = webgl.textureDimensionLocation = gl.getUniformLocation(gl.program, 'u_textureDimension');
             gl.uniform2f(textureDimensionLocation, this.STORE.image_cache.canvas.width, this.STORE.image_cache.canvas.height);
+
+            var mouseCoordLocation = webgl.mouseCoordLocation = gl.getUniformLocation(gl.program, 'u_mouseCoord');
+            gl.uniform2f(mouseCoordLocation, 0.0, 0.0);
+        }
+
+        // Custom shaders
+        {
+            obj.vertexShader = [];
+            webgl.compileVertexShader = [];
+            obj.fragmentShader = [];
+            webgl.compileFragmentShader = [];
+        }
+
+        // Custom uniforms
+        {
+            obj.uniforms = {};
+            webgl.customUniformLocations = {};
         }
 
         this.glUpdateTexture(gl);
     }
 
     this.STORE.layer.push(obj);
-    
+
     return obj;
 };
 
 CanvasNext.prototype.glDraw = function(layer)
 {
-    layer.webgl.gl.clear(layer.webgl.gl.COLOR_BUFFER_BIT | layer.webgl.gl.DEPTH_BUFFER_BIT);
+    if ( layer.clear !== false )
+        layer.webgl.gl.clear(layer.webgl.gl.COLOR_BUFFER_BIT | layer.webgl.gl.DEPTH_BUFFER_BIT);
 
-    // Geometry buffer
-    if ( layer.webgl.stateChanges[0] === true )
+    /**
+     * Drawing triangles
+     */
     {
+        // Geometry buffer
+        if ( layer.webgl.stateChanges[0] === true  )
+        {
+            layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferPosition);
+            layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.verts, layer.webgl.gl.DYNAMIC_DRAW);
+
+            layer.webgl.stateChanges[0] = false;
+        }
+
+        // Properties buffer
+        if ( layer.webgl.stateChanges[1] === true )
+        {
+            layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferProperty);
+            layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.properties, layer.webgl.gl.DYNAMIC_DRAW);
+
+            layer.webgl.stateChanges[1] = false;
+        }
+
+        // Texcoord buffer
+        if ( layer.webgl.stateChanges[2] === true )
+        {
+            layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferTexcoord);
+            layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.texcoords, layer.webgl.gl.DYNAMIC_DRAW);
+
+            layer.webgl.stateChanges[2] = false;
+        }
+
+        // Texture crop buffer
+        if ( layer.webgl.stateChanges[3] === true )
+        {
+            layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferTextureCrop);
+            layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.textureCrop, layer.webgl.gl.DYNAMIC_DRAW);
+
+            layer.webgl.stateChanges[3] = false;
+        }
+
+        layer.webgl.gl.drawArrays(layer.webgl.gl.TRIANGLES, 0, layer.webgl.verts.length / 4);
+    }
+
+    /**
+     * Drawing lines
+     */
+    {
+        return;
+
         layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferPosition);
-        layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.verts, layer.webgl.gl.DYNAMIC_DRAW);
+        layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0,
+                                                                                 0, 0, 0, 0,
+                                                                                 0, 0, 0, 0,
+                                                                                 0, 0, 0, 0,
+                                                                                 0, 0, 0, 0,
+                                                                                 0, 0, 0, 0]), layer.webgl.gl.DYNAMIC_DRAW);
 
-        layer.webgl.stateChanges[0] = false;
-    }
-
-    // Properties buffer
-    if ( layer.webgl.stateChanges[1] === true )
-    {
         layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferProperty);
-        layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.properties, layer.webgl.gl.DYNAMIC_DRAW);
+        layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0,
+                                                                                 0, 0, 0, 50,
+                                                                                 0, 0, 0, 0,
+                                                                                 0, 0, 0, 0,
+                                                                                 0, 0, 0, 0,
+                                                                                 0, 0, 0, 0]), layer.webgl.gl.DYNAMIC_DRAW);
 
-        layer.webgl.stateChanges[1] = false;
-    }
-
-    // Texcoord buffer
-    if ( layer.webgl.stateChanges[2] === true )
-    {
         layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferTexcoord);
-        layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.texcoords, layer.webgl.gl.DYNAMIC_DRAW);
+        layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, new Float32Array([100, 0, 100, 1, 100, 0, 100, 1, 100, 0, 100, 1, 100, 0, 100, 1, 100, 0, 100, 1, 100, 0, 100, 1]), layer.webgl.gl.DYNAMIC_DRAW);
 
-        layer.webgl.stateChanges[2] = false;
-    }
-
-    // Texture crop buffer
-    if ( layer.webgl.stateChanges[3] === true )
-    {
         layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferTextureCrop);
-        layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.textureCrop, layer.webgl.gl.DYNAMIC_DRAW);
+        layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), layer.webgl.gl.DYNAMIC_DRAW);
 
-        layer.webgl.stateChanges[3] = false;
+        layer.webgl.gl.drawArrays(layer.webgl.gl.LINES, 0, layer.webgl.verts.length / 4);
     }
-
-    layer.webgl.gl.drawArrays(layer.webgl.gl.TRIANGLES, 0, layer.webgl.verts.length / 4);
 };
 
 
@@ -857,23 +1002,19 @@ CanvasNext.prototype.glFloat32Concat = function(a, b)
     result.set(b, aLength);
 
     return result;
-}
+};
 
 CanvasNext.prototype.glExpandBuffer = function(layer, length)
 {
-    var buffers = [
-        'verts',
-        'properties',
-        'texcoords',
-        'textureCrop'
-    ];
-
-    for ( var i = 0 ; i < buffers.length ; i++ )
-        layer.webgl[buffers[i]] = this.glFloat32Concat(layer.webgl[buffers[i]], new Float32Array(24 * length).fill(-1))
+    for ( var i = 0 ; i < layer.webgl.bufferList.length ; i++ )
+        layer.webgl[layer.webgl.bufferList[i]] = this.glFloat32Concat(layer.webgl[layer.webgl.bufferList[i]], new Float32Array(24 * length).fill(-1))
 };
 
-CanvasNext.prototype.glUpdateBuffer = function(layer, obj, index)
+CanvasNext.prototype.glUpdateBuffer = function(layer, obj)
 {
+    // Discard if object is void
+    if ( layer.webgl.verts[obj.index] == -1 ) return;
+
     // Set helper variables
     {
         var webgl = layer.webgl;
@@ -881,8 +1022,8 @@ CanvasNext.prototype.glUpdateBuffer = function(layer, obj, index)
 
     // Format default properties
     {
-        rotate = typeof obj['rotate'] != 'undefined' ? obj.rotate * Math.PI / 180 * -1 : 0;
-        opacity = typeof obj['opacity'] != 'undefined' ? parseFloat(obj.opacity.toFixed(3)) : 1;
+        var rotate = typeof obj['rotate'] != 'undefined' ? obj.rotate * Math.PI / 180 * -1 : 0;
+        var opacity = typeof obj['opacity'] != 'undefined' ? parseFloat(obj.opacity.toFixed(3)) : 1;
     }
 
     // Rectangle drawing
@@ -925,8 +1066,8 @@ CanvasNext.prototype.glUpdateBuffer = function(layer, obj, index)
 
         // Properties
         {
-            s = Math.sin(rotate);
-            c = Math.cos(rotate);
+            var s = Math.sin(rotate);
+            var c = Math.cos(rotate);
 
             if (
                 webgl.properties[obj.index + 2] !== obj.x
@@ -969,11 +1110,10 @@ CanvasNext.prototype.glUpdateBuffer = function(layer, obj, index)
 
     // Texcoords
     // Texture / bg_color
-    if ( typeof obj['image'] == 'object' )
+    if ( typeof obj['image'] == 'object' && obj['image'].complete === true )
     {
         // Coloring onto texcoords
         // [ x, y || r, g, b, a ]
-        // Todo: Hier is de bottleneck!
         if (
             typeof webgl.texcoords[obj.index + 2] != 'undefined'
             && webgl.texcoords[obj.index + 2] !== opacity
@@ -981,7 +1121,6 @@ CanvasNext.prototype.glUpdateBuffer = function(layer, obj, index)
             || parseFloat(webgl.texcoords[obj.index + 2].toFixed(3)) > opacity)
         )
         {
-            // Todo: Fix waarom opacity niet goed werkt
             webgl.texcoords.set([
                 0,
                 0,
@@ -1008,31 +1147,30 @@ CanvasNext.prototype.glUpdateBuffer = function(layer, obj, index)
                 opacity,
                 -1
             ], obj.index);
-
-            webgl.stateChanges[2] = true;
         }
 
-        if ( typeof obj['atlas'] == 'undefined' )
+        if ( typeof obj['atlas'] == 'undefined' && this.STORE.image_cache.atlas[obj.image_src] )
             if ( typeof obj['crop'] == 'undefined' )
                 obj.atlas = [
                     this.STORE.image_cache.atlas[obj.image_src].x,
                     this.STORE.image_cache.atlas[obj.image_src].y,
                     this.STORE.image_cache.atlas[obj.image_src].width,
                     this.STORE.image_cache.atlas[obj.image_src].height
-                ] || undefined;
+                ];
             else
                 obj.atlas = ([
                     obj['crop'][0] + this.STORE.image_cache.atlas[obj.image_src].x,
                     obj['crop'][1] + this.STORE.image_cache.atlas[obj.image_src].y,
                     obj['crop'][2],
                     obj['crop'][3]
-                ]) || undefined;
+                ]);
 
         if (
-            webgl.textureCrop[obj.index]        !== obj.atlas[0] || 0
+            typeof obj['atlas'] != 'undefined' &&
+            (webgl.textureCrop[obj.index]        !== obj.atlas[0] || 0
             || webgl.textureCrop[obj.index + 1] !== obj.atlas[1] || 0
             || webgl.textureCrop[obj.index + 2] !== obj.atlas[2] || 0
-            || webgl.textureCrop[obj.index + 3] !== obj.atlas[3] || 0
+            || webgl.textureCrop[obj.index + 3] !== obj.atlas[3] || 0)
         )
         {
             webgl.textureCrop.set([
@@ -1061,50 +1199,54 @@ CanvasNext.prototype.glUpdateBuffer = function(layer, obj, index)
                 obj.atlas[2],
                 obj.atlas[3]
             ], obj.index);
-
-            webgl.stateChanges[3] = true;
         }
+
+        webgl.stateChanges[2] = true;
+        webgl.stateChanges[3] = true;
     }
 
+    // Todo : color "0" creates rendering issues
     else if ( typeof obj['bg_color'] != 'undefined' )
     {
         // Coloring onto texcoords
         // [ x, y || r, g, b, a ]
-        if (
-               parseFloat(webgl.texcoords[obj.index].toFixed(3))     !== parseFloat((obj.bg_color[0] / 255).toFixed(3))
-            || parseFloat(webgl.texcoords[obj.index + 1].toFixed(3)) !== parseFloat((obj.bg_color[1] / 255).toFixed(3))
-            || parseFloat(webgl.texcoords[obj.index + 2].toFixed(3)) !== parseFloat((obj.bg_color[2] / 255).toFixed(3))
-            || parseFloat(webgl.texcoords[obj.index + 3].toFixed(3)) !== parseFloat((obj.bg_color[3]).toFixed(3))
-        )
+        // Todo: Error occurs when changing *only* bg_color array
+        //if (
+        //    webgl.texcoords[obj.index]     !== obj.bg_color[0] / 255
+        //    && webgl.texcoords[obj.index + 1] !== obj.bg_color[1] / 255
+        //    && webgl.texcoords[obj.index + 2] !== obj.bg_color[2] / 255
+        //    && webgl.texcoords[obj.index + 3] !== obj.bg_color[3] / 1
+        //)
         {
             webgl.texcoords.set([
-                obj.bg_color[0] / 255,
-                obj.bg_color[1] / 255,
-                obj.bg_color[2] / 255,
+                obj.bg_color[0]+1 / 255,
+                obj.bg_color[1]+1 / 255,
+                obj.bg_color[2]+1 / 255,
                 obj.bg_color[3],
-                obj.bg_color[0] / 255,
-                obj.bg_color[1] / 255,
-                obj.bg_color[2] / 255,
+                obj.bg_color[0]+1 / 255,
+                obj.bg_color[1]+1 / 255,
+                obj.bg_color[2]+1 / 255,
                 obj.bg_color[3],
-                obj.bg_color[0] / 255,
-                obj.bg_color[1] / 255,
-                obj.bg_color[2] / 255,
+                obj.bg_color[0]+1 / 255,
+                obj.bg_color[1]+1 / 255,
+                obj.bg_color[2]+1 / 255,
                 obj.bg_color[3],
-                obj.bg_color[0] / 255,
-                obj.bg_color[1] / 255,
-                obj.bg_color[2] / 255,
+                obj.bg_color[0]+1 / 255,
+                obj.bg_color[1]+1 / 255,
+                obj.bg_color[2]+1 / 255,
                 obj.bg_color[3],
-                obj.bg_color[0] / 255,
-                obj.bg_color[1] / 255,
-                obj.bg_color[2] / 255,
+                obj.bg_color[0]+1 / 255,
+                obj.bg_color[1]+1 / 255,
+                obj.bg_color[2]+1 / 255,
                 obj.bg_color[3],
-                obj.bg_color[0] / 255,
-                obj.bg_color[1] / 255,
-                obj.bg_color[2] / 255,
+                obj.bg_color[0]+1 / 255,
+                obj.bg_color[1]+1 / 255,
+                obj.bg_color[2]+1 / 255,
                 obj.bg_color[3]
             ], obj.index);
 
             webgl.stateChanges[2] = true;
+            webgl.stateChanges[3] = true;
         }
     }
 };
@@ -1132,12 +1274,82 @@ CanvasNext.prototype.glUpdateTexture = function(gl)
 
 CanvasNext.prototype.glRefresh = function()
 {
-    // Update every layer's WebGL's uniforms & rescale the canvas
+    // Update every layer's WebGL's default & custom uniforms, & rescale the canvas
     for ( var i = 0 ; i < this.STORE.layer.length ; i++ )
     {
-        webgl = this.STORE.layer[i].webgl;
+        var layer = this.STORE.layer[i],
+            webgl = layer.webgl,
+            gl = webgl.gl;
 
-        webgl.gl.uniform2f(webgl.resolutionLocation, webgl.canvas.width, webgl.canvas.height);
+        webgl.cameraLocation = gl.getUniformLocation(gl.program, 'u_camera');
+        webgl.textureDimensionLocation = gl.getUniformLocation(gl.program, 'u_textureDimension');
+        webgl.mouseCoordLocation = gl.getUniformLocation(gl.program, 'u_mouseCoord');
+
+        webgl.gl.uniform4f(webgl.cameraLocation, this.STORE.camera.x, this.STORE.camera.y, webgl.canvas.width, webgl.canvas.height);
         webgl.gl.uniform2f(webgl.textureDimensionLocation, this.STORE.image_cache.canvas.width, this.STORE.image_cache.canvas.height);
+        webgl.gl.uniform2f(webgl.mouseCoordLocation, this.mouse.x, this.mouse.y * -1 + webgl.canvas.height);
+
+        for ( var j in layer.uniforms )
+        {
+            var value = typeof layer.uniforms[j] == 'object' ? new Float32Array(layer.uniforms[j]) : layer.uniforms[j];
+
+            webgl.customUniformLocations[j] = gl.getUniformLocation(gl.program, j);
+
+            if ( typeof value == 'object' )
+                gl.uniform1fv(webgl.customUniformLocations[j], value);
+            else
+                gl.uniform1f(webgl.customUniformLocations[j], value);
+        }
     }
+};
+
+CanvasNext.prototype.glRecompileShaders = function (layer, vert, frag)
+{
+    const webgl = layer.webgl,
+          gl = webgl.gl;
+
+    // Add custom uniforms
+    const uniform_str = '';
+    for ( let i in layer.uniforms )
+        uniform_str += typeof layer.uniforms[i] == 'object'
+            ? '\nuniform float ' + i + '[' + layer.uniforms[i].length + '];'
+            : '\nuniform float ' + i + ';'
+
+    // Append shader code
+    vert = vert && webgl.vertexShaderScript.replace('//CN_CustomShader', webgl.compileVertexShader.join('\n')) || webgl.vertexShaderScript;
+    frag = frag && webgl.fragmentShaderScript.replace('//CN_CustomShader', webgl.compileFragmentShader.join('\n')) || webgl.fragmentShaderScript;
+
+    // Declare custom uniforms
+    vert = vert.replace('//CN_CustomUniform', uniform_str);
+    frag = frag.replace('//CN_CustomUniform', uniform_str);
+
+    // Optionally console log shaders
+    if ( this.gl_log_shaders === true || this.gl_log_shaders_vertex === true ) console.info(vert);
+    if ( this.gl_log_shaders === true || this.gl_log_shaders_fragment === true ) console.info(frag);
+
+    // Vertex shader
+    webgl.vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(webgl.vertexShader, vert);
+    gl.compileShader(webgl.vertexShader);
+
+    // Vertex shader
+    webgl.fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(webgl.fragmentShader, frag);
+    gl.compileShader(webgl.fragmentShader);
+
+    // Error reporting
+    if ( ! gl.getShaderParameter(webgl.vertexShader, gl.COMPILE_STATUS) )
+        console.error('Shader compiler log: ' + gl.getShaderInfoLog(webgl.vertexShader));
+
+    if ( ! gl.getShaderParameter(webgl.fragmentShader, gl.COMPILE_STATUS) )
+        console.error('Shader compiler log: ' + gl.getShaderInfoLog(webgl.fragmentShader));
+
+    // Program
+    gl.program = gl.createProgram();
+    gl.attachShader(gl.program, webgl.vertexShader);
+    gl.attachShader(gl.program, webgl.fragmentShader);
+    gl.linkProgram(gl.program);
+    gl.useProgram(gl.program);
+
+    this.glRefresh();
 };
