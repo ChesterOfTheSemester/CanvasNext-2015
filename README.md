@@ -55,11 +55,19 @@ game.layers[0].fragmentShader = `
 `;
 ```
 
-It also supports camera control.
+It supports camera control.
 
 ```javascript
 game.camera.x += 10;
 game.camera.y += 10;
 game.camera.z += 0.25;
 game.camera.rotate += 0.5;
+```
+
+It records the canvas's offset mouse position.
+
+```javascript
+game.mouse.x;
+game.mouse.y;
+game.mouse_position; // [x,y]
 ```
