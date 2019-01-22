@@ -54,3 +54,12 @@ game.layers[0].fragmentShader = `
     gl_FragColor.xyz = L;
 `;
 ```
+
+It also supports camera control.
+
+```javascript
+game.camera.x += 10;
+game.camera.y += 10;
+game.camera.z += 0.25;
+game.camera.rotate += 0.5;
+```
