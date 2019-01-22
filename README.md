@@ -45,7 +45,7 @@ game.layers[0].use_webgl = true;
 // Automatically switched to WebGL-mode
 ```
 
-For when WebGL is enabled, you can add additional fragment-shader code for layers indivudually. CN recompiles the shader on change.
+For when WebGL is enabled, you can add additional fragment-shader code for layers individually. CN recompiles the shader on change.
 
 ```GLSL
 // Grayscale everything
