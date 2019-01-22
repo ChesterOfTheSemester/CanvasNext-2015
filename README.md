@@ -6,7 +6,6 @@ Firstly instantiate a CanvasNext (CN) object:
 ```javascript
 var game = new CanvasNext({
     canvas : document.getElementById('canvas'),
-    context : '2d',
     width: 900,
     height: 700,
     fps_cap : 300
