@@ -71,3 +71,9 @@ game.mouse.x;
 game.mouse.y;
 game.mouse_position; // [x,y]
 ```
+
+Read the FPS
+
+```javascript
+game.fps;
+```
