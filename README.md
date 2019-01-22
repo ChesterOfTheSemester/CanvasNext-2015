@@ -37,7 +37,7 @@ player.image = 'example.com/sprite2.png';
 player.layer = 2;
 ```
 
-# audio
+# Audio
 Though I recommend creating your own solution for audio, CN objects can hold audio objects and downloads them synchronously.
 
 ```javascript
