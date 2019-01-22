@@ -36,6 +36,14 @@ player.image = 'example.com/sprite2.png';
 player.layer = 2;
 ```
 
+Though I recommend creating your own solution for audio, CN objects can hold audio objects and downloads them synchronously.
+
+```javascript
+player.audio = 'example.com/audio.mp3'
+
+// This value is now replaced and cached as an HTML audio element
+```
+
 This library does layer-based rendering. You can change an object's *layer* value asynchronously. You can access layers and settings in the *layer* scope. 
 
 You can enable WebGL for layers individually for the purpose of speed. Think of them as particle-containers or simply layers with many movable objects. It will draw objects as cubes.
