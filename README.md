@@ -13,6 +13,7 @@ var game = new CanvasNext({
 });
 ```
 
+# Objects
 Next, you can add objects. They're like rectangles:
 
 ```javascript
@@ -36,14 +37,16 @@ player.image = 'example.com/sprite2.png';
 player.layer = 2;
 ```
 
+# audio
 Though I recommend creating your own solution for audio, CN objects can hold audio objects and downloads them synchronously.
 
 ```javascript
-player.audio = 'example.com/audio.mp3'
+player.audio = 'example.com/audio.mp3';
 
 // This value is now replaced and cached as an HTML audio element
 ```
 
+# Layers, WebGL
 This library does layer-based rendering. You can change an object's *layer* value asynchronously. You can access layers and settings in the *layer* scope. 
 
 You can enable WebGL for layers individually for the purpose of speed. Think of them as particle-containers or simply layers with many movable objects. It will draw objects as cubes.
@@ -63,6 +66,7 @@ game.layers[0].fragmentShader = `
 `;
 ```
 
+# Camera
 It supports camera control.
 
 ```javascript
@@ -72,6 +76,7 @@ game.camera.z += 0.25;
 game.camera.rotate += 0.5;
 ```
 
+# ReadOnly
 It records the canvas's offset mouse position.
 
 ```javascript
