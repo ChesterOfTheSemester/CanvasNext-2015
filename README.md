@@ -59,14 +59,12 @@ game.layers[0].position = 'absolute'; // "absolute" || "relative"
 ```
 
 # WebGL 1.0
-
 You can enable WebGL for layers individually for the purpose of performance gain. Think of them as particle-containers or simply layers with many movable objects. It will draw objects as cubes.
 
 ```javascript
 game.layers[0].use_webgl = true;
 // Automatically switched to WebGL-mode
 ```
-
 For when WebGL is enabled, you can add additional fragment-shader code for layers individually. CN recompiles the shader on change.
 
 ```GLSL
@@ -75,6 +73,15 @@ game.layers[0].fragmentShader = `
     float L = 0.34 * gl_FragColor.x + 0.5 * gl_FragColor.y + 0.16 * gl_FragColor.z;
     gl_FragColor.xyz = L;
 `;
+```
+Pre-defined fragmentShader variables:
+
+```GLSL
+varying vec4 textureCrop;
+uniform vec2 u_textureDimension;
+
+varying vec4 v_texcoord;
+uniform sampler2D texture;
 ```
 
 # Camera
