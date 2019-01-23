@@ -45,10 +45,22 @@ player.audio = 'example.com/audio.mp3';
 // This value is now replaced and cached as an HTML audio element
 ```
 
-# Layers, WebGL
+# Layers
 This library does layer-based rendering. You can change an object's *layer* value asynchronously. You can access layers and settings in the *layer* scope. 
 
-You can enable WebGL for layers individually for the purpose of speed. Think of them as particle-containers or simply layers with many movable objects. It will draw objects as cubes.
+```javascript
+player.layer = 2;
+```
+
+If you're creating e.g, a GUI within a game you can define a layer as "absolute" so that it sticks to a XY coordinate irrelevant of the *camera* position. Much like how position in CSS works.
+
+```javascript
+game.layers[0].position = 'absolute'; // "absolute" || "relative"
+```
+
+# WebGL 1.0
+
+You can enable WebGL for layers individually for the purpose of performance gain. Think of them as particle-containers or simply layers with many movable objects. It will draw objects as cubes.
 
 ```javascript
 game.layers[0].use_webgl = true;
