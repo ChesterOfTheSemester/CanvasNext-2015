@@ -86,10 +86,10 @@ varying vec4 v_texcoord;
 uniform sampler2D texture;
 ```
 
-You can define *1fv* uniform floats/arrays for an individual layer's fragmentShader. 
+You can define *1fv* uniform floats/arrays for an individual layer's fragmentShader. The *uniforms* property is an object and the key represents the variable name.
 
 ```javascript
-game.layers[0]["u_lightPoint1"] = [xy, offset_xy, rgba, 0.5];
+game.layers[0].uniforms["u_lightPoint1"] = [xy, offset_xy, rgba, 0.5];
 ```
 
 The same applies for *vertexShader* scripts.
