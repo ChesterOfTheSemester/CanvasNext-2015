@@ -58,7 +58,7 @@ If you're creating e.g, a GUI within a game you can define a layer as "absolute"
 game.layers[0].position = 'absolute'; // "absolute" || "relative"
 ```
 
-![alt text](https://msdnshared.blob.core.windows.net/media/MSDNBlogsFS/prod.evol.blogs.msdn.com/CommunityServer.Blogs.Components.WeblogFiles/00/00/01/10/46/metablogapi/8358.WebGL_500_151_75_18F64D69.png)
+![alt text](https://i.ibb.co/3vwRQ7q/8358-Web-GL-500-151-75-18-F64-D69.png)
 You can enable WebGL for layers individually for the purpose of performance gain. Think of them as particle-containers or simply layers with many movable objects. It will draw objects as cubes.
 
 ```javascript
