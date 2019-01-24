@@ -86,6 +86,8 @@ varying vec4 v_texcoord;
 uniform sampler2D texture;
 ```
 
+The same applies for *vertexShader* scripts.
+
 # Camera
 It supports camera control.
 
