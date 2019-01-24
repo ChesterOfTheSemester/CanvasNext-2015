@@ -1,7 +1,7 @@
 # CanvasNext-2015
 A 2D/WebGL enabled rendering library I worked on between 2015 and 2016
 
-Firstly instantiate a CanvasNext (CN) object:
+Firstly instantiate a CanvasNext (CN) object.
 
 ```javascript
 var game = new CanvasNext({
@@ -13,7 +13,7 @@ var game = new CanvasNext({
 ```
 
 # Objects
-Next, you can add objects. They're like rectangles or 2D sprites:
+Next, you can add objects. They're like rectangles or 2D sprites.
 
 ```javascript
 var player = game.add_obj({
@@ -27,7 +27,7 @@ var player = game.add_obj({
 });
 ```
 
-The library is asynchronous. If you change an object's value it will take effect immediately:
+The library is asynchronous. If you change an object's value it will take effect immediately.
 
 ```javascript
 player.x += 10;
