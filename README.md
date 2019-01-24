@@ -13,7 +13,7 @@ var game = new CanvasNext({
 ```
 
 # Objects
-Next, you can add objects. They're like rectangles:
+Next, you can add objects. They're like rectangles or 2D sprites:
 
 ```javascript
 var player = game.add_obj({
@@ -37,7 +37,7 @@ player.layer = 2;
 ```
 
 # Audio
-Though I recommend creating your own solution for audio, CN objects can hold audio objects and downloads them synchronously.
+Although I recommend creating your own solution for audio, CN objects can hold audio objects and downloads them synchronously.
 
 ```javascript
 player.audio = 'example.com/audio.mp3';
