@@ -65,13 +65,15 @@ You can enable WebGL for layers individually for the purpose of performance gain
 game.layers[0].use_webgl = true;
 // Automatically switched to WebGL-mode
 ```
-For when WebGL is enabled, you can add additional fragment-shader code for layers individually. CN recompiles the shader on change.
+For when WebGL is enabled, you can add additional fragment-shader code for layers individually. CN recompiles the shader on change. The *fragmentShader* property is an array of strings which is joined together when a recompilation occurs.
 
 ```GLSL
 // Grayscale everything
-game.layers[0].fragmentShader = `
+game.layers[0].fragmentShader[0] = `
     float L = 0.34 * gl_FragColor.x + 0.5 * gl_FragColor.y + 0.16 * gl_FragColor.z;
-    gl_FragColor.xyz = L;
+    gl_FragColor.x = L;
+    gl_FragColor.y = L;
+    gl_FragColor.z = L;
 `;
 ```
 Pre-defined fragmentShader variables:
