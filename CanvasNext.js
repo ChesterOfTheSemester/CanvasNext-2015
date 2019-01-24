@@ -3,7 +3,7 @@
  *   ES6 required
  *
  *   2016 by Chester Abrahams
- *   Visit my LinkedIn: https://www.linkedin.com/in/chesterabrahams/
+ *   IN: https://www.linkedin.com/in/chesterabrahams/
  */
 
 var CanvasNext = function(opt)
