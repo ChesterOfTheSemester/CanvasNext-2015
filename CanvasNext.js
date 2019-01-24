@@ -1,7 +1,9 @@
 /**
  *   Top-level CanvasNext API
+ *   ES6 required
  *
- *   2016 Chester Abrahams
+ *   2016 by Chester Abrahams
+ *   Visit my LinkedIn: https://www.linkedin.com/in/chesterabrahams/
  */
 
 var CanvasNext = function(opt)
@@ -98,9 +100,9 @@ CanvasNext.prototype.initialize = function(opt)
         if ( value === 0 ) return 0;
 
         return Math.abs(value) || (window.requestAnimationFrame = window.requestAnimationFrame
-                || window.mozRequestAnimationFrame
-                || window.webkitRequestAnimationFrame
-                || window.msRequestAnimationFrame)
+            || window.mozRequestAnimationFrame
+            || window.webkitRequestAnimationFrame
+            || window.msRequestAnimationFrame)
     }) (opt.fps_cap);
 
     /**
@@ -112,11 +114,11 @@ CanvasNext.prototype.initialize = function(opt)
      * @type count: <int> // represents the second's frame rate. Its value is copied to CanvasNext.fps
      */
     this.STORE.frameCount =
-    {
-        frameEnum : 0,
-        frameTime : 0,
-        count : 0
-    };
+        {
+            frameEnum : 0,
+            frameTime : 0,
+            count : 0
+        };
 
     /**
      * Object's Proxy handler whose primary purpose is to
@@ -293,20 +295,20 @@ CanvasNext.prototype.initialize = function(opt)
      */
     {
         var APIHandler = { set : function(obj, key, value)
-        {
-            switch ( key )
             {
-                case 'width' : obj.STORE.canvas.width = value; break;
-                case 'height' : obj.STORE.canvas.height = value; break;
+                switch ( key )
+                {
+                    case 'width' : obj.STORE.canvas.width = value; break;
+                    case 'height' : obj.STORE.canvas.height = value; break;
 
-                case 'fps_cap' :
-                    obj.STORE.fps_cap = value;
-                    if ( value > 0 ) CN.callback();
-                    break;
-            }
+                    case 'fps_cap' :
+                        obj.STORE.fps_cap = value;
+                        if ( value > 0 ) CN.callback();
+                        break;
+                }
 
-            obj[key] = value;
-        }};
+                obj[key] = value;
+            }};
 
         var API = new Proxy(this, APIHandler);
 
@@ -430,11 +432,11 @@ CanvasNext.prototype.render = function()
 
             // Optimization: don't draw the object if it's outside the canvas viewport
             if ( target_layer.position != 'absolute' /*&& target_layer.buffer !== true*/ && target_layer.obj[obj].buffer !== true && ! (
-                    ( target_layer.obj[obj].x + target_layer.obj[obj].width >= this.STORE.camera.x
+                ( target_layer.obj[obj].x + target_layer.obj[obj].width >= this.STORE.camera.x
                     && target_layer.obj[obj].x <= this.STORE.camera.x + this.STORE.canvas.width )
-                    && ( target_layer.obj[obj].y + target_layer.obj[obj].height >= this.STORE.camera.y
+                && ( target_layer.obj[obj].y + target_layer.obj[obj].height >= this.STORE.camera.y
                     && target_layer.obj[obj].y <= this.STORE.camera.y + this.STORE.canvas.height )
-                ) ) continue;
+            ) ) continue;
 
             // Draw the object
             // Fill GL buffer in case you're using WebGL
@@ -457,7 +459,7 @@ CanvasNext.prototype.render = function()
                 // Optionally draw WebGL triangles
                 if ( this.STORE.layer[i].use_webgl === true )
                     this.glDraw(this.STORE.layer[i]),
-                    canvas = this.STORE.layer[i].webgl.canvas;
+                        canvas = this.STORE.layer[i].webgl.canvas;
                 else
                     canvas = this.STORE.layer[i].canvas;
 
@@ -520,8 +522,8 @@ CanvasNext.prototype.draw = function (ctx, obj, opt)
     // Render text, set optional fillStyle element
     if ( typeof obj['text'] != 'undefined' )
         ctx.fillStyle = obj['text'][2],
-        ctx.font = obj['text'][1],
-        ctx.fillText( obj['text'][0], obj['x'], obj['y'] );
+            ctx.font = obj['text'][1],
+            ctx.fillText( obj['text'][0], obj['x'], obj['y'] );
 
     // Set fillStyle
     if ( typeof obj['fillStyle'] != 'undefined' )
@@ -598,8 +600,8 @@ CanvasNext.prototype.draw = function (ctx, obj, opt)
     // Draw an image
     if ( typeof obj['image'] != 'undefined'
         && (
-        obj['image'] instanceof HTMLImageElement && obj.image.complete
-        || obj['image'] instanceof HTMLCanvasElement)
+            obj['image'] instanceof HTMLImageElement && obj.image.complete
+            || obj['image'] instanceof HTMLCanvasElement)
     )
     {
         if ( typeof obj['crop'] != 'undefined' )
@@ -771,8 +773,78 @@ CanvasNext.prototype.add_layer = function(obj)
 
         // Setup GLSL programs
         {
-            var vertexShaderScript = webgl.vertexShaderScript = 'attribute vec4 a_position;\nattribute vec4 a_texcoord;\nattribute vec4 a_property;\nattribute vec4 a_textureCrop;\n\nuniform vec4 u_camera;\n\nvarying vec4 v_texcoord;\nvarying vec4 textureCrop;\n\nvoid main(void)\n{\n \/\/ Discard if this vertex is -1\n if ( a_property.x == -1.0 )\n gl_Position = vec4(2.0, 2.0, 2.0, 1.0);\n\n else\n {\n \/*** Handle geometry & rotation ***\/\n \/\/ Reposition for centered rotation\n vec2 position = vec2(\n a_position.x - a_position.z \/ 2.0,\n a_position.y - a_position.w \/ 2.0);\n\n vec2 rotatedPosition = a_property.x == 0.0 && a_property.y == 1.0\n ? position\n : vec2(\n position.x * a_property.y + position.y * a_property.x,\n position.y * a_property.y - position.x * a_property.x);\n\n \/\/ Restore position\n rotatedPosition.x += a_position.z \/ 2.0;\n rotatedPosition.y += a_position.w \/ 2.0;\n\n gl_Position = vec4(((vec2(u_camera.x, u_camera.y) *-1.0 + rotatedPosition + vec2(a_property.z, a_property.w)) \/ vec2(u_camera.z, u_camera.w) * 2.0 - 1.0) * vec2(1, -1), 0, 1);\n\n\n \/*** Set texture & properties ***\/\n textureCrop = a_textureCrop;\n v_texcoord = a_texcoord;\n }\n}';
-            var fragmentShaderScript = webgl.fragmentShaderScript = 'precision lowp float;\n\nvarying vec4 textureCrop;\nuniform vec2 u_textureDimension;\n\nvarying vec4 v_texcoord;\nuniform sampler2D texture;\n\nvoid main(void)\n{\n \/\/ Discard if this fragment is -1\n \/\/if ( v_texcoord.x == -1.0 ) discard;\n\n \/\/ Decide whether to draw texture or RGBA\n if ( v_texcoord.w < 0.0 )\n {\n gl_FragColor = texture2D(texture, vec2(\n v_texcoord.x * textureCrop.z \/ u_textureDimension.x + textureCrop.x \/ u_textureDimension.x,\n v_texcoord.y * textureCrop.w \/ u_textureDimension.y + textureCrop.y \/ u_textureDimension.y\n ));\n\n \/\/if ( gl_FragColor.w > 0.0 ) gl_FragColor.w = v_texcoord.z;\n }\n\n else\n gl_FragColor = v_texcoord;\n}';
+            // Scripts are in template literals. ES6 required
+            var vertexShaderScript = webgl.vertexShaderScript = `
+                attribute vec4 a_position;
+                attribute vec4 a_texcoord;
+                attribute vec4 a_property;
+                attribute vec4 a_textureCrop;
+                
+                uniform vec4 u_camera;
+                
+                varying vec4 v_texcoord;
+                varying vec4 textureCrop;
+                
+                void main(void)
+                {
+                 // Discard if this vertex is -1
+                 if ( a_property.x == -1.0 )
+                    gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+                
+                 else
+                 {
+                     /*** Handle geometry & rotation ***/
+                     // Reposition for centered rotation
+                     vec2 position = vec2(a_position.x - a_position.z / 2.0,
+                                          a_position.y - a_position.w / 2.0);
+                    
+                     vec2 rotatedPosition = a_property.x == 0.0 && a_property.y == 1.0
+                                            ? position
+                                            : vec2(position.x * a_property.y + position.y * a_property.x,
+                                                   position.y * a_property.y - position.x * a_property.x);
+                    
+                     // Restore position
+                     rotatedPosition.x += a_position.z / 2.0;
+                     rotatedPosition.y += a_position.w / 2.0;
+                    
+                     gl_Position = vec4(((vec2(u_camera.x, u_camera.y) *-1.0 + rotatedPosition + vec2(a_property.z, a_property.w)) / vec2(u_camera.z, u_camera.w) * 2.0 - 1.0) * vec2(1, -1), 0, 1);
+                    
+                     /*** Set texture & properties ***/
+                     textureCrop = a_textureCrop;
+                     v_texcoord = a_texcoord;
+                 }
+                 
+                 //CN_CustomShader
+                }
+            `;
+            var fragmentShaderScript = webgl.fragmentShaderScript = `
+                precision lowp float;
+    
+                varying vec4 textureCrop;
+                uniform vec2 u_textureDimension;
+                
+                varying vec4 v_texcoord;
+                uniform sampler2D texture;
+                
+                void main(void)
+                {
+                 // Discard if this fragment is -1
+                 if ( v_texcoord.x == -1.0 ) discard;
+                
+                 // Decide whether to draw texture or RGBA
+                 if ( v_texcoord.w < 0.0 )
+                     gl_FragColor = texture2D(
+                        texture,
+                        vec2(v_texcoord.x * textureCrop.z / u_textureDimension.x + textureCrop.x / u_textureDimension.x,
+                             v_texcoord.y * textureCrop.w / u_textureDimension.y + textureCrop.y / u_textureDimension.y)
+                     );
+                
+                 else
+                    gl_FragColor = v_texcoord;
+                    
+                 //CN_CustomShader
+                }
+            `;
 
             vertexShaderScript = webgl.vertexShaderScript = document.getElementById('2d-vertex-shader') && document.getElementById('2d-vertex-shader').text || vertexShaderScript;
             fragmentShaderScript = webgl.fragmentShaderScript = document.getElementById('2d-fragment-shader') && document.getElementById('2d-fragment-shader').text || fragmentShaderScript;
@@ -948,19 +1020,19 @@ CanvasNext.prototype.glDraw = function(layer)
 
         layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferPosition);
         layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0,
-                                                                                 0, 0, 0, 0,
-                                                                                 0, 0, 0, 0,
-                                                                                 0, 0, 0, 0,
-                                                                                 0, 0, 0, 0,
-                                                                                 0, 0, 0, 0]), layer.webgl.gl.DYNAMIC_DRAW);
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0]), layer.webgl.gl.DYNAMIC_DRAW);
 
         layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferProperty);
         layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 0,
-                                                                                 0, 0, 0, 50,
-                                                                                 0, 0, 0, 0,
-                                                                                 0, 0, 0, 0,
-                                                                                 0, 0, 0, 0,
-                                                                                 0, 0, 0, 0]), layer.webgl.gl.DYNAMIC_DRAW);
+            0, 0, 0, 50,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0]), layer.webgl.gl.DYNAMIC_DRAW);
 
         layer.webgl.gl.bindBuffer(layer.webgl.gl.ARRAY_BUFFER, layer.webgl.bufferTexcoord);
         layer.webgl.gl.bufferData(layer.webgl.gl.ARRAY_BUFFER, new Float32Array([100, 0, 100, 1, 100, 0, 100, 1, 100, 0, 100, 1, 100, 0, 100, 1, 100, 0, 100, 1, 100, 0, 100, 1]), layer.webgl.gl.DYNAMIC_DRAW);
@@ -1148,9 +1220,9 @@ CanvasNext.prototype.glUpdateBuffer = function(layer, obj)
         if (
             typeof obj['atlas'] != 'undefined' &&
             (webgl.textureCrop[obj.index]        !== obj.atlas[0] || 0
-            || webgl.textureCrop[obj.index + 1] !== obj.atlas[1] || 0
-            || webgl.textureCrop[obj.index + 2] !== obj.atlas[2] || 0
-            || webgl.textureCrop[obj.index + 3] !== obj.atlas[3] || 0)
+                || webgl.textureCrop[obj.index + 1] !== obj.atlas[1] || 0
+                || webgl.textureCrop[obj.index + 2] !== obj.atlas[2] || 0
+                || webgl.textureCrop[obj.index + 3] !== obj.atlas[3] || 0)
         )
         {
             webgl.textureCrop.set([
@@ -1286,10 +1358,10 @@ CanvasNext.prototype.glRefresh = function()
 CanvasNext.prototype.glRecompileShaders = function (layer, vert, frag)
 {
     const webgl = layer.webgl,
-          gl = webgl.gl;
+        gl = webgl.gl;
 
     // Add custom uniforms
-    const uniform_str = '';
+    let uniform_str = '';
     for ( let i in layer.uniforms )
         uniform_str += typeof layer.uniforms[i] == 'object'
             ? '\nuniform float ' + i + '[' + layer.uniforms[i].length + '];'
