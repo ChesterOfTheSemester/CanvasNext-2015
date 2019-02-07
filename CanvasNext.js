@@ -1384,7 +1384,7 @@ CanvasNext.prototype.glRecompileShaders = function (layer, vert, frag)
     gl.shaderSource(webgl.vertexShader, vert);
     gl.compileShader(webgl.vertexShader);
 
-    // Vertex shader
+    // Fragment shader
     webgl.fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     gl.shaderSource(webgl.fragmentShader, frag);
     gl.compileShader(webgl.fragmentShader);
