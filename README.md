@@ -40,7 +40,7 @@ player.layer = 2;
 ```
 
 # Audio
-Although I recommend creating your own solution for audio, CN objects can hold audio objects and downloads them synchronously.
+Although I recommend creating your own solution for audio, CN objects can hold audio objects and downloads them asynchronously.
 
 ```javascript
 player.audio = 'example.com/audio.mp3';
